@@ -10,6 +10,7 @@ from discord.utils import get
 from discord import FFmpegPCMAudio
 import asyncio
 import time
+import os
 
 bot = commands.Bot(command_prefix='.')
 client = discord.Client()
@@ -28,7 +29,7 @@ def title(msg):
     options = webdriver.ChromeOptions()
     options.add_argument("headless")
 
-    chromedriver_dir = r"D:\chromedriver.exe"
+    driver = load_chrome_driver()
     driver = webdriver.Chrome(chromedriver_dir, options = options)
     driver.get("https://www.youtube.com/results?search_query="+msg+"+lyrics")
     source = driver.page_source
@@ -76,6 +77,18 @@ def play_next(ctx):
             del song_queue[0]
             vc.play(discord.FFmpegPCMAudio(URL,**FFMPEG_OPTIONS), after=lambda e: play_next(ctx))
 
+def load_chrome_driver():
+      
+    options = webdriver.ChromeOptions()
+
+    options.binary_location = os.getenv('GOOGLE_CHROME_BIN')
+
+    options.add_argument('--headless')
+    # options.add_argument('--disable-gpu')
+    options.add_argument('--no-sandbox')
+
+    return webdriver.Chrome(executable_path=str(os.environ.get('CHROME_EXECUTABLE_PATH')), chrome_options=options)
+
     else:
         if not vc.is_playing():
             client.loop.create_task(vc.disconnect())
@@ -84,6 +97,9 @@ def play_next(ctx):
 async def on_ready():
     print(bot.user.name)
     await bot.change_presence(status=discord.Status.online, activity=discord.Game("김장훈으로 변신"))
+
+    if not discord.opus.is_loaded():
+        discord.opus.load_opus('opus')
 
 @bot.command()       #입장 명령어
 async def 김장훈(ctx):
@@ -126,7 +142,7 @@ async def p(ctx, *, msg):
         YDL_OPTIONS = {'format': 'bestaudio', 'noplaylist':'True'}
         FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
             
-        chromedriver_dir = r"D:\chromedriver.exe"
+        driver = load_chrome_driver()
         driver = webdriver.Chrome(chromedriver_dir, options = options)
         driver.get("https://www.youtube.com/results?search_query="+msg+"+lyrics")
         source = driver.page_source
